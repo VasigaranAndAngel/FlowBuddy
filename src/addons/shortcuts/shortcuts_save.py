@@ -14,7 +14,7 @@ try:
         data = json.load(f)
     _, _, _ = data["settings"], data["groups"], data["tasks"]
 except (json.JSONDecodeError, FileNotFoundError, KeyError):
-    with open(FILE_PATH, 'w') as f:
+    with open(FILE_PATH, "w") as f:
         f.write('{"settings": {}, "groups": {}, "tasks": {}}')
 
 
@@ -296,10 +296,10 @@ class GroupClass:
         The method will loop through 'group_tasks' to delete all tasks
         individually.
         """
-        
+
         for task in self.group_tasks:
             get_task_by_id(task).delete_task()
-            
+
         with open(FILE_PATH, "r") as save_file:
             json_data = json.load(save_file)
 
@@ -365,7 +365,15 @@ class GroupClass:
         :param file_path: filepath string
         :param directory_path: directory path string
         """
-        new_task = TaskClass(self.group_id, task_name, task_id, button_text, url, file_path, directory_path)
+        new_task = TaskClass(
+            self.group_id,
+            task_name,
+            task_id,
+            button_text,
+            url,
+            file_path,
+            directory_path,
+        )
 
         self.group_tasks.append(new_task.task_id)
         self.save_group()
@@ -568,7 +576,7 @@ def load_tasks() -> list:
 
 def change_group_of_task(task_id: str, new_group_id: str):
     group_id = get_group_id_of_task(task_id)
-    
+
     with open(FILE_PATH, "r") as save_file:
         json_data = json.load(save_file)
 

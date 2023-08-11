@@ -33,14 +33,20 @@ from ui.utils import get_font
 
 NodeChangeEventType = NewType("NodeChangeEventType", int)
 
+
 class NodeChangeEvent(QEvent):
     class Type:
         NODE_RESIZED: NodeChangeEventType = NodeChangeEventType(0)
         NODE_DELETED: NodeChangeEventType = NodeChangeEventType(1)
         NODE_MOVING: NodeChangeEventType = NodeChangeEventType(2)
         NODE_MOVED: NodeChangeEventType = NodeChangeEventType(3)
-        
-    def __init__(self, event: NodeChangeEventType, node: GroupNode | TaskNode, mouse_event: QMouseEvent = None):
+
+    def __init__(
+        self,
+        event: NodeChangeEventType,
+        node: GroupNode | TaskNode,
+        mouse_event: QMouseEvent = None,
+    ):
         super().__init__(QEvent.Type.User)
         self.event = event
         self.node = node
@@ -59,25 +65,24 @@ class SubNodeManager:
     def __init__(self, layout: QLayout, parent: QWidget):
         self._nodes_container: QVBoxLayout = layout
         self._parent = parent
-        
+
         self.departed_signal = Signal(GroupNode | TaskNode)
-        
+
         self._current_changes = None
-        
-        
+
     def add_node(self, node: GroupNode | TaskNode) -> None:
         self._nodes_container.addWidget(node)
         node.changed.connect(self._on_node_change)
         self._update_nodes_contents_margins()
         QTimer.singleShot(0, self._parent.adjustSize)
-        
+
     def remove_node(self, node: GroupNode | TaskNode) -> None:
         self._nodes_container.removeWidget(node)
         node.hide()
         node.deleteLater()
         self._update_nodes_contents_margins()
         QTimer.singleShot(0, self._parent.adjustSize)
-        
+
     def _on_node_change(self, event: NodeChangeEvent) -> None:
         if event.event == NODE_DELETED:
             self.remove_node(event.node)
@@ -85,11 +90,13 @@ class SubNodeManager:
             self._on_node_moving(event)
         elif event.event == NODE_MOVED:
             self._on_node_moved()
-        
+
     def _on_node_moving(self, event: NodeChangeEvent) -> None:
         # check if the mouse hovering over any other GroupNode.
         # if so, check if the mouse is hovering top half or bottom half of the GroupNode.
-        mouse_position = event.node.mapTo(self._parent, event.mouse_event.pos())  # mapped to parent widget.
+        mouse_position = event.node.mapTo(
+            self._parent, event.mouse_event.pos()
+        )  # mapped to parent widget.
         mouse_position.setX(1)  # x canceled
 
         for i in range(self._nodes_container.count()):
@@ -97,7 +104,9 @@ class SubNodeManager:
             if node is event.node:
                 continue
 
-            node_rect = node.geometry().adjusted(-node.geometry().x(), 0, 2, 0)  # x is set to 0 (canceled).
+            node_rect = node.geometry().adjusted(
+                -node.geometry().x(), 0, 2, 0
+            )  # x is set to 0 (canceled).
             top_half_rect = node_rect.adjusted(0, 0, 0, -(node.height() // 2))
             bottom_half_rect = node_rect.adjusted(0, (node.height() // 2), 0, 0)
 
@@ -105,9 +114,9 @@ class SubNodeManager:
                 self._current_changes: list = [event.node, i]
                 break
             elif bottom_half_rect.contains(mouse_position):
-                self._current_changes: list = [event.node, i +1]
+                self._current_changes: list = [event.node, i + 1]
                 break
-            
+
         if not self._nodes_container.geometry().contains(mouse_position):
             self.departed_signal.emit(event.node)
 
@@ -116,7 +125,7 @@ class SubNodeManager:
             self.change_node_index(self._current_changes[0], self._current_changes[1])
             self._current_changes = None
         self._nodes_container.update()
-        
+
     def _update_nodes_contents_margins(self):
         # currently GroupNode contents margins are only updated.
         for i in range(self._nodes_container.count()):
@@ -128,7 +137,9 @@ class SubNodeManager:
         for i in range(self._nodes_container.count()):
             _node: GroupNode | TaskNode = self._nodes_container.itemAt(i).widget()
             if node is _node:
-                index -= (1 if i < index else 0)  # for avoid index shifting when removing the widget.
+                index -= (
+                    1 if i < index else 0
+                )  # for avoid index shifting when removing the widget.
                 self._nodes_container.insertItem(index, self._nodes_container.takeAt(i))
                 break
 
@@ -138,7 +149,7 @@ class SubNodeManager:
                 for i in range(self._nodes_container.count())
             ]
             Data.reorder_groups(group_ids)
-            
+
         else:
             task_ids = [
                 self._nodes_container.itemAt(i).widget().task_class.task_id
@@ -152,17 +163,17 @@ class SubNodeManager:
         for i in range(self._nodes_container.count()):
             node: GroupNode | TaskNode = self._nodes_container.itemAt(i).widget()
             node.set_edit_mode(on)
-        
+
 
 class BaseNode(QWidget):
     class Buttons(QWidget):
         def __init__(self, add_grn_button: bool, parent: QWidget | None = None) -> None:
             super().__init__(parent)
-            
+
             self.setLayout(layout := QHBoxLayout(self))
             layout.setContentsMargins(scaled(10), 0, 0, 0)
             layout.setSpacing(scaled(7))
-            
+
             if add_grn_button:
                 self.grn_button = GrnButton(self, "radial")
                 layout.addWidget(self.grn_button)
@@ -172,7 +183,7 @@ class BaseNode(QWidget):
 
             layout.addWidget(self.yel_button)
             layout.addWidget(self.red_button)
-    
+
     task_class: Data.TaskClass
     group_class: Data.GroupClass
     buttons: BaseNode.Buttons
@@ -184,8 +195,7 @@ class BaseNode(QWidget):
 
         self._parent = parent
         self._mouse_click_offset = None
-        
-        
+
     def set_edit_mode(self, on: bool) -> None:
         self.buttons.setHidden(not on)
         self.adjustSize()
@@ -194,19 +204,18 @@ class BaseNode(QWidget):
         self.hide()
         self.deleteLater()
         self.changed.emit(NodeChangeEvent(NODE_DELETED, self))
-        
+
     def adjustSize(self) -> None:
         super().adjustSize()
         self.changed.emit(NodeChangeEvent(NODE_RESIZED, self))
-    
+
     def is_first_node(self) -> bool:
         return self is self._parent.get_first_node()
 
     @property
     def data_class(self):
         return self.task_class if "task_class" in self.__dict__ else self.group_class
-    
-    
+
     def mousePressEvent(self, a0: QMouseEvent) -> None:
         self._mouse_click_offset = a0.pos()
         self.raise_()
@@ -216,7 +225,7 @@ class BaseNode(QWidget):
             y = self.mapToParent(a0.pos() - self._mouse_click_offset).y()
             self.move(self.x(), y)
             self.changed.emit(NodeChangeEvent(NODE_MOVING, self, a0))
-    
+
     def mouseReleaseEvent(self, a0: QMouseEvent) -> None:
         self._mouse_click_offset = None
         self.changed.emit(NodeChangeEvent(NODE_MOVED, self, a0))
@@ -224,19 +233,19 @@ class BaseNode(QWidget):
 
 class TaskNode(BaseNode):
     nodes: dict[str, TaskNode] = {}
-    
+
     def __init__(self, task_class: Data.TaskClass, parent: QWidget) -> None:
         super().__init__(parent)
         TaskNode.nodes[task_class.task_id] = self
-        
+
         self.task_class: Data.TaskClass = task_class
-        
+
         self.setLayout(layout := QHBoxLayout())
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(scaled(10))
-        
+
         layout.addWidget(buttons := BaseNode.Buttons(False, self))
-        
+
         layout.addStretch()
 
         self.red_button = buttons.red_button
@@ -246,27 +255,26 @@ class TaskNode(BaseNode):
         self.label = QLabel(self)
         self.label.setFont(get_font(size=scaled(16)))
         self.label.hide()
-        
+
         self.button = TextButton(self)
         self.button.clicked.connect(self._text_button_action)
         self.button.hide()
-        
+
         layout: QHBoxLayout = self.layout()
         layout.insertWidget(0, self.label)
         layout.insertWidget(1, self.button)
         layout.setContentsMargins(0, scaled(15), 0, 0)
-        
+
         self.setFixedHeight(self.button.sizeHint().height())
-        
+
         self.update_contents()
-        
+
         self.yel_button.clicked.connect(self._edit_task)
         self.red_button.clicked.connect(self._delete_task)
-        
+
     def __repr__(self):
         return f"TaskNode: {self.task_class.task_name}"
-        
-        
+
     def _set_label(self, label: str) -> None:
         self.label.setText(label)
         if label:
@@ -286,7 +294,7 @@ class TaskNode(BaseNode):
     def _text_button_action(self) -> None:
         print("Button action")
         # XXX: button action should be implemented.
-        
+
     def _edit_task(self) -> None:
         dialog = TaskDialog(self)
         dialog.for_edit(self.task_class)
@@ -295,33 +303,39 @@ class TaskNode(BaseNode):
             self.update_contents()
 
     def _delete_task(self) -> None:
-        dialog = ConfirmationDialog(f"Delete '{self.task_class.task_name}' from\
-                '{Data.get_group_by_id(self.task_class.group_id).group_name}'?")
+        dialog = ConfirmationDialog(
+            f"Delete '{self.task_class.task_name}' from\
+                '{Data.get_group_by_id(self.task_class.group_id).group_name}'?"
+        )
         if dialog.exec() == ACCEPTED:
             self.task_class.delete_task()
             self.changed.emit(NodeChangeEvent(NODE_DELETED, self))
 
     def update_contents(self) -> None:
         self._set_label(self.task_class.task_name)
-        self._set_button(text if (text := self.task_class.button_text) is not None else "")
-        
+        self._set_button(
+            text if (text := self.task_class.button_text) is not None else ""
+        )
+
 
 class GroupNode(BaseNode):
     task_node_departed_signal = pyqtSignal(TaskNode)
     """This signal will be emitted when a TaskNode is departed from the GroupNode."""
     nodes: dict[str, GroupNode] = {}
-    
-    def __init__(self, group_class: Data.GroupClass, parent: QWidget | None = None) -> None:
+
+    def __init__(
+        self, group_class: Data.GroupClass, parent: QWidget | None = None
+    ) -> None:
         super().__init__(parent)
         GroupNode.nodes[group_class.group_id] = self
-        
+
         self.group_class: Data.GroupClass = group_class
         self._id = group_class.group_id
-        
+
         self.setLayout(main_layout := QVBoxLayout())
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
-        
+
         main_layout.addLayout(layout := QHBoxLayout())
         main_layout.addLayout(nodes_layout := QVBoxLayout())
         self._nodes_layout = nodes_layout
@@ -329,38 +343,39 @@ class GroupNode(BaseNode):
         layout.setSpacing(0)
         nodes_layout.setContentsMargins(0, 0, 0, 0)
         nodes_layout.setSpacing(0)
-        
+
         layout.addWidget(buttons := BaseNode.Buttons(True, self))
-        
+
         layout.addStretch()
 
         self.red_button = buttons.red_button
         self.yel_button = buttons.yel_button
         self.grn_button = buttons.grn_button
         self.buttons = buttons
-        
+
         self.label = QLabel(self)
         self.label.setFont(get_font(size=scaled(24), weight="semibold"))
         self.label.hide()
-        
+
         layout.insertWidget(0, self.label)
-        
+
         self._task_nodes_manager = SubNodeManager(nodes_layout, self)
-        self._task_nodes_manager.departed_signal.connect(self.task_node_departed_signal.emit)
+        self._task_nodes_manager.departed_signal.connect(
+            self.task_node_departed_signal.emit
+        )
 
         self._update_contents()
 
         self.grn_button.clicked.connect(self._new_task)
         self.yel_button.clicked.connect(self._edit_group)
         self.red_button.clicked.connect(self._delete_group)
-        
+
         # spawn TaskNodes
         for task_class in self.group_class.get_tasks():
             self._add_task_node(task_class)
 
     def __repr__(self):
         return f"GroupNode: {self.group_class.group_name}"
-
 
     def _update_contents(self) -> None:
         self._set_label(self.group_class.group_name)
@@ -377,7 +392,9 @@ class GroupNode(BaseNode):
         dialog = TaskDialog(self)
         if (result := dialog.exec()) != REJECTED:
             name, button_text, url, file_path = result
-            task_class = self.group_class.create_task(name, None, button_text, url, file_path)
+            task_class = self.group_class.create_task(
+                name, None, button_text, url, file_path
+            )
             self._add_task_node(task_class)
 
     def _edit_group(self) -> None:
@@ -421,19 +438,26 @@ class GroupNode(BaseNode):
         middle_of_task_node = position + task_node.height() // 2
         for i in range(self._nodes_layout.count()):
             _node = self._nodes_layout.itemAt(i).widget()
-            if _node.rect().adjusted(0, 0, 0, -_node.height()//2).contains(middle_of_task_node):
+            if (
+                _node.rect()
+                .adjusted(0, 0, 0, -_node.height() // 2)
+                .contains(middle_of_task_node)
+            ):
                 # task_node in top half of _node
                 print("task_node in top half of node")
-            elif _node.rect().adjusted(0, _node.height()//2, 0, 0).contains(middle_of_task_node):
+            elif (
+                _node.rect()
+                .adjusted(0, _node.height() // 2, 0, 0)
+                .contains(middle_of_task_node)
+            ):
                 # task_node in bottom half of _node
                 print("task_node in bottom half of node")
         # XXX: delete task_node and add new task_node with new task data.
-        # if yes, put the 
+        # if yes, put the
 
     def adjustSize(self) -> None:
         super().adjustSize()
         QTimer.singleShot(0, self._parent.adjustSize)
-
 
     # uncomment this to show every individual groups.
     # def paintEvent(self, a0: QtGui.QPaintEvent) -> None:

@@ -15,15 +15,15 @@ def main():
     tray_icon = AddOnBase.system_tray_icon = QSystemTrayIcon(QIcon(FS.icon("icon.png")))
     tray_icon.setToolTip("FlowBuddy")
     tray_icon.show()
-    
+
     menu = QMenu()
     quit_action = menu.addAction("Quit")
     quit_action.triggered.connect(app.quit)
     tray_icon.setContextMenu(menu)
-    
+
     load_addons()
-    
-    widgets=LowerWidget(add_ons)
+
+    widgets = LowerWidget(add_ons)
 
     sys.exit(app.exec_())
 

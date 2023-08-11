@@ -4,7 +4,7 @@ import re
 
 def lighten_color(hex_value: str, amount: int = 0.5) -> str:
     """Lighten a hex valued color by a specific amount."""
-    r, g, b = tuple(int(hex_value[i:i + 2], 16) for i in (0, 2, 4))
+    r, g, b = tuple(int(hex_value[i : i + 2], 16) for i in (0, 2, 4))
     h, l, s = colorsys.rgb_to_hls(r / 255.0, g / 255.0, b / 255.0)
     l = min(1.0, l + amount)
     r, g, b = tuple(round(i * 255) for i in colorsys.hls_to_rgb(h, l, s))
@@ -14,7 +14,7 @@ def lighten_color(hex_value: str, amount: int = 0.5) -> str:
 
 def darken_color(hex_value: str, amount: int = 0.5) -> str:
     """Darken a hex valued color by a specific amount."""
-    r, g, b = tuple(int(hex_value[i:i + 2], 16) for i in (0, 2, 4))
+    r, g, b = tuple(int(hex_value[i : i + 2], 16) for i in (0, 2, 4))
     h, l, s = colorsys.rgb_to_hls(r / 255.0, g / 255.0, b / 255.0)
     l = max(0.0, l - amount)
     r, g, b = tuple(round(i * 255) for i in colorsys.hls_to_rgb(h, l, s))
@@ -26,7 +26,7 @@ def replace_color(style: str, color: str, amount: int = 0.5) -> str:
     """
     Replace a color in a stylesheet string with a new color.
     You can mention the color as a hex value or as "light" or "dark".
-    When mentioning the color as "light" or "dark", 
+    When mentioning the color as "light" or "dark",
     you can mention the amount of lightness or darkness from 0 to 1.
     """
     pattern = r"background-color:\s*([^\s;}]+)"

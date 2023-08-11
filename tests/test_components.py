@@ -13,17 +13,21 @@ import addon
 
 application = QApplication([])
 
+
 def load_addon(name: str) -> ModuleType:
     module_name = f"addons.{name}.{name}"
     addon.add_on_paths[module_name] = f"addons/{name}/{name}"
     addon.currently_loading_module = module_name
-    print(f"Addon name: {name}\nAddon path: {addon.add_on_paths[module_name]}\nModule: {module_name}")
+    print(
+        f"Addon name: {name}\nAddon path: {addon.add_on_paths[module_name]}\nModule: {module_name}"
+    )
     print(f"Importing '{module_name}' module.")
     module = import_module(f"addons.{name}.{name}")
     print("Import complete.")
     addon.currently_loading_module = None
     addon.add_ons[module_name] = module
     return module
+
 
 def activate_addon(name: str) -> None:
     module_name = f"addons.{name}.{name}"

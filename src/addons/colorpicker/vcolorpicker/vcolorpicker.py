@@ -10,10 +10,9 @@ import colorsys
 from typing import Union
 from typing import Optional
 
-from PyQt5.QtCore import (QPoint, Qt)
+from PyQt5.QtCore import QPoint, Qt
 from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import (
-    QWidget, QApplication, QDialog, QGraphicsDropShadowEffect)
+from PyQt5.QtWidgets import QWidget, QApplication, QDialog, QGraphicsDropShadowEffect
 
 from .ui_dark import Ui_ColorPicker as Ui_Dark
 from .ui_dark_alpha import Ui_ColorPicker as Ui_Dark_Alpha
@@ -24,10 +23,7 @@ from .img import *
 
 
 class ColorPicker(QDialog):
-
-    def __init__(
-            self, lightTheme: bool = True,
-            useAlpha: bool = True):
+    def __init__(self, lightTheme: bool = True, useAlpha: bool = True):
         """Create a new ColorPicker instance.
 
         :param lightTheme: If the UI should be light themed.
@@ -123,8 +119,7 @@ class ColorPicker(QDialog):
         self.setRGB(lc)
         self.rgbChanged()
         r, g, b = lc
-        self.ui.lastcolor_vis.setStyleSheet(
-            f"background-color: rgb({r},{g},{b})")
+        self.ui.lastcolor_vis.setStyleSheet(f"background-color: rgb({r},{g},{b})")
 
         if self.exec_():
             r, g, b = hsv2rgb(self.color)
@@ -138,19 +133,26 @@ class ColorPicker(QDialog):
 
     # Update Functions
     def hsvChanged(self):
-        h, s, v = (100 - self.ui.hue_selector.y() / 1.85,
-                   (self.ui.selector.x() + 6) / 2.0, (194 - self.ui.selector.y()) / 2.0)
+        h, s, v = (
+            100 - self.ui.hue_selector.y() / 1.85,
+            (self.ui.selector.x() + 6) / 2.0,
+            (194 - self.ui.selector.y()) / 2.0,
+        )
         r, g, b = hsv2rgb(h, s, v)
         self.color = (h, s, v)
         self.setRGB((r, g, b))
         self.setHex(hsv2hex(self.color))
         self.ui.color_vis.setStyleSheet(f"background-color: rgb({r},{g},{b})")
         self.ui.color_view.setStyleSheet(
-            f"border-radius: 5px;background-color: qlineargradient(x1:1, x2:0, stop:0 hsl({h}%,100%,50%), stop:1 #fff);")
+            f"border-radius: 5px;background-color: qlineargradient(x1:1, x2:0, stop:0 hsl({h}%,100%,50%), stop:1 #fff);"
+        )
 
     def rgbChanged(self):
-        r, g, b = self.i(self.ui.red.text()), self.i(
-            self.ui.green.text()), self.i(self.ui.blue.text())
+        r, g, b = (
+            self.i(self.ui.red.text()),
+            self.i(self.ui.green.text()),
+            self.i(self.ui.blue.text()),
+        )
         cr, cg, cb = self.clampRGB((r, g, b))
 
         if r != cr or (r == 0 and self.ui.red.hasFocus()):
@@ -203,7 +205,8 @@ class ColorPicker(QDialog):
     def setHSV(self, c):
         self.ui.hue_selector.move(7, int((100 - c[0]) * 1.85))
         self.ui.color_view.setStyleSheet(
-            f"border-radius: 5px;background-color: qlineargradient(x1:1, x2:0, stop:0 hsl({c[0]}%,100%,50%), stop:1 #fff);")
+            f"border-radius: 5px;background-color: qlineargradient(x1:1, x2:0, stop:0 hsl({c[0]}%,100%,50%), stop:1 #fff);"
+        )
         self.ui.selector.move(int(c[1] * 2 - 6), int((200 - c[2] * 2) - 6))
 
     def setHex(self, c):
@@ -275,7 +278,9 @@ class ColorPicker(QDialog):
 
 
 # Color Utility
-def hsv2rgb(h_or_color: Union[tuple, int], s: int = 0, v: int = 0, a: int = None) -> tuple:
+def hsv2rgb(
+    h_or_color: Union[tuple, int], s: int = 0, v: int = 0, a: int = None
+) -> tuple:
     """Convert hsv color to rgb color.
 
     :param h_or_color: The 'hue' value or a color tuple.
@@ -298,7 +303,9 @@ def hsv2rgb(h_or_color: Union[tuple, int], s: int = 0, v: int = 0, a: int = None
     return r * 255, g * 255, b * 255
 
 
-def rgb2hsv(r_or_color: Union[tuple, int], g: int = 0, b: int = 0, a: int = None) -> tuple:
+def rgb2hsv(
+    r_or_color: Union[tuple, int], g: int = 0, b: int = 0, a: int = None
+) -> tuple:
     """Convert rgb color to hsv color.
 
     :param r_or_color: The 'red' value or a color tuple.
@@ -329,10 +336,10 @@ def hex2rgb(hex: str) -> tuple:
     """
 
     if len(hex) < 6:
-        hex += "0"*(6-len(hex))
+        hex += "0" * (6 - len(hex))
     elif len(hex) > 6:
         hex = hex[0:6]
-    rgb = tuple(int(hex[i:i+2], 16) for i in (0, 2, 4))
+    rgb = tuple(int(hex[i : i + 2], 16) for i in (0, 2, 4))
     return rgb
 
 
@@ -350,7 +357,7 @@ def rgb2hex(r_or_color: Union[tuple, int], g: int = 0, b: int = 0, a: int = 0) -
         r, g, b = r_or_color[:3]
     else:
         r = r_or_color
-    hex = '%02x%02x%02x' % (int(r), int(g), int(b))
+    hex = "%02x%02x%02x" % (int(r), int(g), int(b))
     return hex
 
 
@@ -421,7 +428,10 @@ def getColor(lc: tuple = None) -> tuple:
     if __instance is None:
         __instance = ColorPicker(useAlpha=__useAlpha, lightTheme=__lightTheme)
 
-    if __useAlpha != __instance.usingAlpha or __lightTheme != __instance.usingLightTheme:
+    if (
+        __useAlpha != __instance.usingAlpha
+        or __lightTheme != __instance.usingLightTheme
+    ):
         del __instance
         __instance = ColorPicker(useAlpha=__useAlpha, lightTheme=__lightTheme)
 

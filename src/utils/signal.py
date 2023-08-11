@@ -2,6 +2,7 @@ from typing import Any, Callable, Dict, Generic, TypeVar
 
 ArgType = TypeVar("ArgType")
 
+
 class Signal(Generic[ArgType]):
     """
     A custom signal implementation for implementing the observer pattern.
@@ -23,7 +24,6 @@ class Signal(Generic[ArgType]):
 
     def __call__(self, *args: ArgType, **kwargs: Dict[str, ArgType]):
         self.emit(*args, **kwargs)
-
 
     def connect(self, handler: Callable[[ArgType, Dict[str, ArgType]], Any]):
         """

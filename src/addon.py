@@ -10,7 +10,13 @@ from PyQt5.QtWidgets import QSystemTrayIcon
 from PyQt5.QtGui import QKeySequence
 
 from FileSystem import exists, abspath, icon as get_icon, ADDONS_FOLDER, ADDONS_NAME
-from SaveFile import JsonType, NotFoundException, apply_setting, get_setting, remove_setting
+from SaveFile import (
+    JsonType,
+    NotFoundException,
+    apply_setting,
+    get_setting,
+    remove_setting,
+)
 from utils import HotKeys
 
 
@@ -23,31 +29,21 @@ currently_loading_module = None
 def load_addons() -> None:
     """Loads all the modules from the ADDONs folder."""
     global add_ons, add_on_paths, currently_loading_module
-    
+
     def apply_order(modules_and_paths: dict[str, str]) -> dict[str, str]:
         order_file = f"{ADDONS_FOLDER}/order.json"
         if not exists(order_file):
             default_order_data = {
-                    "_comment": [
-                        "High priority addons. These addons will be loaded first.",
-                        "Those addons which not specified will be considered as 'medium_priority' and will be loaded after loading hight_priority addons.",
-                        "Low priority addons. These addons will be loaded after loading all the addons.",
-                        "Names are case insensitive."
-                    ],
-
-
-                    "high_priority": [
-                        "shortcuts",
-                        "notes",
-                        "youtube_downloader"
-                    ],
-
-                    "medium_priority": [],
-
-                    "low_priority": [
-                        "settings"
-                    ]
-                }
+                "_comment": [
+                    "High priority addons. These addons will be loaded first.",
+                    "Those addons which not specified will be considered as 'medium_priority' and will be loaded after loading hight_priority addons.",
+                    "Low priority addons. These addons will be loaded after loading all the addons.",
+                    "Names are case insensitive.",
+                ],
+                "high_priority": ["shortcuts", "notes", "youtube_downloader"],
+                "medium_priority": [],
+                "low_priority": ["settings"],
+            }
             with open(order_file, "w") as f:
                 json.dump(default_order_data, f, indent=4)
 
@@ -57,53 +53,69 @@ def load_addons() -> None:
                 if exists(order_file):
                     with open(order_file, "r") as f:
                         order_data = json.load(f)
-                        
-                    high_priorities   = (x.lower() for x in order_data["high_priority"])
-                    medium_priorities = (x.lower() for x in order_data["medium_priority"])
-                    low_priorities    = (x.lower() for x in order_data["low_priority"])
-                    
-                    modules_name_in_lower = {x.split(".")[-1].lower(): x for x in modules_and_paths}
-                    
+
+                    high_priorities = (x.lower() for x in order_data["high_priority"])
+                    medium_priorities = (
+                        x.lower() for x in order_data["medium_priority"]
+                    )
+                    low_priorities = (x.lower() for x in order_data["low_priority"])
+
+                    modules_name_in_lower = {
+                        x.split(".")[-1].lower(): x for x in modules_and_paths
+                    }
+
                     priority_addons = []
-                    for priority in (high_priorities, medium_priorities, low_priorities):
+                    for priority in (
+                        high_priorities,
+                        medium_priorities,
+                        low_priorities,
+                    ):
                         addons = {}
                         for module in priority:
                             if module in modules_name_in_lower:
                                 module_name = modules_name_in_lower[module]
                                 addons[module_name] = modules_and_paths.pop(module_name)
                         priority_addons.append(addons)
-                        
-                    high_priority_addons, medium_priority_addons, low_priority_addons = priority_addons
+
+                    (
+                        high_priority_addons,
+                        medium_priority_addons,
+                        low_priority_addons,
+                    ) = priority_addons
 
                     rest_addons = modules_and_paths
 
-                    return {**high_priority_addons,
-                            **medium_priority_addons,
-                            **rest_addons,
-                            **low_priority_addons}
+                    return {
+                        **high_priority_addons,
+                        **medium_priority_addons,
+                        **rest_addons,
+                        **low_priority_addons,
+                    }
 
             except Exception as e:
                 print(f"Error occurred while applying order for addons.\n{e}")
-            
+
         return modules_and_paths
-    
-    
+
     if exists(ADDONS_FOLDER):
         # traverse root directory, and list directories as dirs and files as files
         modules_and_paths = {}
-        
+
         for root, dirs, files in os.walk(ADDONS_FOLDER):
-            if root != ADDONS_FOLDER: continue
+            if root != ADDONS_FOLDER:
+                continue
             for name in dirs:
                 dir_path = os.path.join(root, name)
                 file_path = os.path.join(dir_path, f"{name}.py")
-                if os.path.isfile(file_path):  # If the .py file with same name as directory exists
-                    module_name = f'{ADDONS_NAME}.{name}.{name}'
+                if os.path.isfile(
+                    file_path
+                ):  # If the .py file with same name as directory exists
+                    module_name = f"{ADDONS_NAME}.{name}.{name}"
                     modules_and_paths[module_name] = file_path
             break
-        
+
         modules_and_paths = apply_order(modules_and_paths)
-        
+
         for module_name in modules_and_paths:
             # Import the module
             add_on_paths[module_name] = modules_and_paths[module_name]
@@ -114,40 +126,44 @@ def load_addons() -> None:
             add_ons[module_name] = module
 
 
-
 class AddOnBase:
-    system_tray_icon: QSystemTrayIcon = None # instance of QSystemTrayIcon will be assigned after initializing it
+    system_tray_icon: QSystemTrayIcon = (
+        None  # instance of QSystemTrayIcon will be assigned after initializing it
+    )
     instances: dict[str, AddOnBase] = {}
-    
+
     def __new__(cls, name: Optional[str] = None):
         # returns the instance of currently loading or calling addon module if available.
         # if not, returns the AddOnBase instance of module of given addon name.
-        
-        if (addon_module:=currently_loading_module) is not None or \
-            (addon_module:=AddOnBase._get_calling_module()) is not None:
+
+        if (addon_module := currently_loading_module) is not None or (
+            addon_module := AddOnBase._get_calling_module()
+        ) is not None:
             if name is not None:
-                print("WARNING: name should not be specified when creating new instace from addon module.",
-                      f"name of this instance is '{addon_module}'.")
-                
+                print(
+                    "WARNING: name should not be specified when creating new instace from addon module.",
+                    f"name of this instance is '{addon_module}'.",
+                )
+
             if addon_module in AddOnBase.instances:
                 return AddOnBase.instances[addon_module]
             new_instance = super().__new__(cls)
             new_instance._init()
             AddOnBase.instances[addon_module] = new_instance
             return new_instance
-        
+
         if name in AddOnBase.instances:
             return AddOnBase.instances[name]
-        else: raise ValueError(f"'{name}' AddOn instance not found.")
-    
+        else:
+            raise ValueError(f"'{name}' AddOn instance not found.")
+
     def _init(self):
         self.MODULE_NAME = currently_loading_module
         self.activate_shortcut = None
-        
+
         # default name and icon_path
         self.name = self.MODULE_NAME.split(".")[-1].replace("_", " ").title()
         self.icon_path = "icon.png"
-
 
     @staticmethod
     def _get_calling_module() -> str | None:
@@ -161,20 +177,19 @@ class AddOnBase:
             ),
             None,
         )
-        
-        
+
     @property
     def MODULE(self) -> ModuleType:
         return add_ons[self.MODULE_NAME]
-    
+
     @property
     def PATH(self) -> str:
         return add_on_paths[self.MODULE_NAME]
-    
+
     @property
     def icon_path(self) -> str:
         return self._icon_path
-    
+
     @icon_path.setter
     def icon_path(self, icon_path: str) -> None:
         if _icon_path := abspath(f"{os.path.dirname(self.PATH)}/{icon_path}"):
@@ -182,43 +197,48 @@ class AddOnBase:
             # XXX: inform icon not found warning.
         else:
             self._icon_path = get_icon("default_launcher_icon.png")
-        
-        
+
     def activate(self):
         """Override this method to call when desktop widget is activated."""
         pass
-    
+
     def set_activate_shortcut(self, key: QKeySequence) -> None:
         """Adds a global shortcut key to call the activate method."""
         self.activate_shortcut: QKeySequence = key
-        HotKeys.add_global_shortcut(HotKeys.format_shortcut_string(key.toString()), lambda: self.activate())
+        HotKeys.add_global_shortcut(
+            HotKeys.format_shortcut_string(key.toString()), lambda: self.activate()
+        )
 
-    
     def set_icon_path(self, icon_path: str) -> None:
         """Set the icon path of icon that shows in the launcher. The icon should be in the addon directory."""
         self.icon_path = icon_path
-        
+
     def set_name(self, name: str) -> None:
         """Set custom name for this addon. that shows in the launcher."""
         self.name = name
         # XXX: The name must be bound to the conditions. it should be rejected if not.
 
-
     def apply_setting(self, name: str, value: JsonType) -> None:
-        save_file = os.path.join(os.path.dirname(add_on_paths[self.MODULE_NAME]), "save.json")
+        save_file = os.path.join(
+            os.path.dirname(add_on_paths[self.MODULE_NAME]), "save.json"
+        )
         return apply_setting(name, value, save_file)
-    
+
     def get_setting(self, name: str) -> JsonType:
-        save_file = os.path.join(os.path.dirname(add_on_paths[self.MODULE_NAME]), "save.json")
+        save_file = os.path.join(
+            os.path.dirname(add_on_paths[self.MODULE_NAME]), "save.json"
+        )
         return get_setting(name, save_file)
-    
+
     def remove_setting(self, name: str) -> None:
-        save_file = os.path.join(os.path.dirname(add_on_paths[self.MODULE_NAME]), "save.json")
+        save_file = os.path.join(
+            os.path.dirname(add_on_paths[self.MODULE_NAME]), "save.json"
+        )
         return remove_setting(name, save_file)
-    
-    
+
     @staticmethod
     def set_shortcut(key: QKeySequence, function: Callable) -> None:
         """Adds a global shortcut"""
-        HotKeys.add_global_shortcut(HotKeys.format_shortcut_string(key.toString()), function)
-    
+        HotKeys.add_global_shortcut(
+            HotKeys.format_shortcut_string(key.toString()), function
+        )

@@ -10,6 +10,7 @@ from ui import BaseWindow, TabsWindow
 from ui.utils import get_font
 from settings import UI_SCALE
 
+
 class NoteTab(QWidget):
     def __init__(self, file_path):
         super().__init__()
@@ -33,11 +34,13 @@ class NoteTab(QWidget):
         )
         self.setLayout(layout)
         self.load_text_from_file()
-        
-        self.setStyleSheet("""QTextEdit{ 
+
+        self.setStyleSheet(
+            """QTextEdit{ 
                                 background-color:lightgrey;
                                 border-radius: 10;
-                            } """)
+                            } """
+        )
 
     def load_text_from_file(self):
         if os.path.exists(self.file_path):
@@ -52,6 +55,7 @@ class NoteTab(QWidget):
     def create_new_file(self):
         with open(self.file_path, "w") as file:
             file.write("")
+
 
 app = QApplication([])
 

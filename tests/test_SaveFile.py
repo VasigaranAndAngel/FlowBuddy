@@ -36,7 +36,9 @@ class TestGroupClass(unittest.TestCase):
         self.assertEqual(test_group_class_2.group_tasks, ["T_12345", "T_102030"])
         self.assertRaises(TaskAlreadyInGroup, test_group_class_2.append, "T_102030")
 
-        self.assertIsInstance(test_group_class_1.create_task("Test_task", "T_908070"), TaskClass)
+        self.assertIsInstance(
+            test_group_class_1.create_task("Test_task", "T_908070"), TaskClass
+        )
 
         self.assertIn("T_908070", test_group_class_1.group_tasks)
         test_group_class_1.delete_task("T_908070")

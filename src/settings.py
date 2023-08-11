@@ -16,17 +16,19 @@ def _get_setting(setting_name: str) -> tuple[Any, bool]:
         return None, False
 
 
-
 CORNER_RADIUS = 12
 STROKE_WIDTH = 2
 
 # Assign the retrieved value if it is found; otherwise, assign the default value.
-UI_SCALE: float = _load[0] if (_load:=_get_setting("ui_scale"))[1] and isinstance(_load[0], (int, float)) else 1.0
-
-
+UI_SCALE: float = (
+    _load[0]
+    if (_load := _get_setting("ui_scale"))[1] and isinstance(_load[0], (int, float))
+    else 1.0
+)
 
 
 from PyQt5.QtCore import QSize, QPoint
+
 
 def apply_ui_scale(value: int | float | QSize | QPoint) -> int | float | QSize | QPoint:
     scaled_value = value * UI_SCALE

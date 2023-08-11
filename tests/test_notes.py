@@ -4,8 +4,6 @@ from PyQt5.QtCore import Qt
 from ui.dialog import ConfirmationDialog
 
 
-
-
 def test_delete_tab(qtbot, tmpdir):
     # Create a temporary directory for testing
     temp_dir = tmpdir.mkdir("addons/notes")
@@ -23,7 +21,7 @@ def test_delete_tab(qtbot, tmpdir):
     qtbot.addWidget(window)
 
     # Mock the QMessageBox.question method to always return QMessageBox.Yes
-    def mock_question(_, __, ___, ____,  default_button):
+    def mock_question(_, __, ___, ____, default_button):
         dialog = ConfirmationDialog("Delete tab test.txt?")
         return True
 
@@ -40,5 +38,3 @@ def test_delete_tab(qtbot, tmpdir):
 
     # Verify that the file is deleted
     assert not os.path.exists(str(test_file))
-
-

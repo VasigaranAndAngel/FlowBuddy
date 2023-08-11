@@ -45,7 +45,7 @@ def _prepare_save_file(save_file: Optional[str] = None) -> str:
 
 def apply_setting(name: str, value: JsonType, save_file: Optional[str] = None) -> None:
     save_file_path = _prepare_save_file(save_file)
-    
+
     with open(save_file_path, "r") as save_file:
         json_data = json.load(save_file)
 
@@ -57,7 +57,7 @@ def apply_setting(name: str, value: JsonType, save_file: Optional[str] = None) -
 
 def get_setting(name: str, save_file: Optional[str] = None) -> JsonType:
     save_file_path = _prepare_save_file(save_file)
-    
+
     with open(save_file_path, "r") as save_file:
         json_data = json.load(save_file)
 
@@ -68,7 +68,7 @@ def get_setting(name: str, save_file: Optional[str] = None) -> JsonType:
 
 def remove_setting(name: str, save_file: Optional[str] = None) -> None:
     save_file_path = _prepare_save_file(save_file)
-    
+
     with open(save_file_path, "r") as save_file:
         json_data = json.load(save_file)
 

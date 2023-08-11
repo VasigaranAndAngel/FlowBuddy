@@ -30,21 +30,30 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QPointF, pyqtSignal
 from PyQt5.QtGui import QPainter, QLinearGradient, QKeySequence
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 from settings import UI_SCALE  # pylint: disable=import-error
 from ui.utils import get_font  # pylint: disable=import-error
 from ui.entry_box import Entry  # pylint: disable=import-error
 from ui.base_window import BaseWindow  # pylint: disable=import-error
 from ui.dialog import ConfirmationDialog, BaseDialog  # pylint: disable=import-error
-from ui.custom_button import RedButton, GrnButton, YelButton, TextButton  # pylint: disable=import-error
+from ui.custom_button import (
+    RedButton,
+    GrnButton,
+    YelButton,
+    TextButton,
+)  # pylint: disable=import-error
 
 from addon import AddOnBase
+
 
 class RoundedProgressBar(QProgressBar):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QProgressBar {
                 border-radius: 10px;
                 border: 0px solid grey;
@@ -58,7 +67,8 @@ class RoundedProgressBar(QProgressBar):
                 border: 0px solid black;
             }
 
-        """)
+        """
+        )
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -71,10 +81,15 @@ class RoundedProgressBar(QProgressBar):
         painter.setPen(Qt.NoPen)
 
         # Draw the progress bar
-        progress_rect = bg_rect.adjusted(0, 0, -int(bg_rect.width() * (1 - self.value() / self.maximum())), 0)
+        progress_rect = bg_rect.adjusted(
+            0, 0, -int(bg_rect.width() * (1 - self.value() / self.maximum())), 0
+        )
 
         # Create the gradient
-        gradient = QLinearGradient(QPointF(progress_rect.left(), progress_rect.top()), QPointF(progress_rect.right(), progress_rect.top()))
+        gradient = QLinearGradient(
+            QPointF(progress_rect.left(), progress_rect.top()),
+            QPointF(progress_rect.right(), progress_rect.top()),
+        )
         gradient.setColorAt(0, Qt.red)
         gradient.setColorAt(0.5, Qt.yellow)
         gradient.setColorAt(1, Qt.green)
@@ -84,6 +99,7 @@ class RoundedProgressBar(QProgressBar):
 
     def minimumSizeHint(self):
         return self.sizeHint()
+
 
 def get_available_videos(url: str, progress: pyqtSignal = None) -> dict:
     """Get a list of available videos with coresponding resolutions for a YouTube URL.
@@ -101,12 +117,14 @@ def get_available_videos(url: str, progress: pyqtSignal = None) -> dict:
     """
 
     try:
-        ssl._create_default_https_context = ssl._create_stdlib_context  # pylint: disable=protected-access
+        ssl._create_default_https_context = (
+            ssl._create_stdlib_context
+        )  # pylint: disable=protected-access
         yt_downloader = YouTube(url)
 
         available_videos = {}
         for stream in yt_downloader.streams:
-            video_type = stream.mime_type.split('/')[1]
+            video_type = stream.mime_type.split("/")[1]
             if video_type not in available_videos:
                 available_videos[video_type] = []
             available_videos[video_type].append(stream.resolution)
@@ -120,13 +138,15 @@ def get_available_videos(url: str, progress: pyqtSignal = None) -> dict:
         print(f"Error getting available videos: {err}\n{format_exc()}")
         return {}
 
+
 def download_youtube_video(
-        url: str,
-        download_path: str = os.path.join(os.path.expanduser("~"), "Downloads"),
-        video_type: str = "mp4",
-        resolution: str = "720p",
-        progress: pyqtSignal = None,
-        filesize: pyqtSignal = None) -> int:
+    url: str,
+    download_path: str = os.path.join(os.path.expanduser("~"), "Downloads"),
+    video_type: str = "mp4",
+    resolution: str = "720p",
+    progress: pyqtSignal = None,
+    filesize: pyqtSignal = None,
+) -> int:
     """Download a youtube video given its url, download_path, video_type and resolution.
 
     Args:
@@ -142,33 +162,44 @@ def download_youtube_video(
 
     try:
         progress.emit(1, 1, 1)
-        ssl._create_default_https_context = ssl._create_stdlib_context  # pylint: disable=protected-access
+        ssl._create_default_https_context = (
+            ssl._create_stdlib_context
+        )  # pylint: disable=protected-access
         yt_downloader1 = YouTube(url)
 
         # check if the video is available in the specified resolution
-        if not yt_downloader1.streams.filter(file_extension=video_type, resolution=resolution):
+        if not yt_downloader1.streams.filter(
+            file_extension=video_type, resolution=resolution
+        ):
             print(f"Video not available in {resolution} resolution")
             return 1
         progress.emit(2, 2, 2)
         # add _resolution to the filename
-        video_name = yt_downloader1.streams.filter(
-            file_extension=video_type, resolution=resolution
-        ).first().default_filename
+        video_name = (
+            yt_downloader1.streams.filter(
+                file_extension=video_type, resolution=resolution
+            )
+            .first()
+            .default_filename
+        )
         video_name = video_name.replace(f".{video_type}", f"_{resolution}.{video_type}")
         yt_downloader2 = YouTube(url, on_progress_callback=progress.emit)
         progress.emit(3, 3, 3)
-        filesize.emit(yt_downloader2.streams.filter(
-            file_extension=video_type,
-            resolution=resolution
-        ).first().filesize)
+        filesize.emit(
+            yt_downloader2.streams.filter(
+                file_extension=video_type, resolution=resolution
+            )
+            .first()
+            .filesize
+        )
         yt_downloader2.streams.filter(
-            file_extension=video_type,
-            resolution=resolution
+            file_extension=video_type, resolution=resolution
         ).first().download(download_path, filename=video_name)
         return 0
     except Exception as err:
         print(f"Error downloading video: {err}\n{format_exc()}")
         return 1
+
 
 class YoutubeDownloader(BaseWindow):
     ytd_toggle_signal = pyqtSignal()
@@ -222,7 +253,9 @@ class YoutubeDownloader(BaseWindow):
         return super().on_edit_button_clicked(event)
 
     def add_worker(self) -> None:
-        active_workers = [worker for worker in self.workers.values() if worker is not None]
+        active_workers = [
+            worker for worker in self.workers.values() if worker is not None
+        ]
         if len(active_workers) < 5:
             ind = len(self.workers) + 1
             worker = DownloaderWorker(parent=self, ind=ind)
@@ -231,8 +264,7 @@ class YoutubeDownloader(BaseWindow):
         else:
             # Display a message box
             warning = BaseDialog(
-                "Maximum number of youtube downloaders reached",
-                parent=self
+                "Maximum number of youtube downloaders reached", parent=self
             )
 
             # remove reject button frm the dialog
@@ -241,9 +273,14 @@ class YoutubeDownloader(BaseWindow):
 
             warning.exec_()
 
+
 class SettingsDialog(BaseDialog):
-    def __init__(self, title: str = "Title", parent: QWidget | None = None,
-                 available_videos: list = None) -> None:
+    def __init__(
+        self,
+        title: str = "Title",
+        parent: QWidget | None = None,
+        available_videos: list = None,
+    ) -> None:
         super().__init__(title, parent)
 
         self.layout = QGridLayout()
@@ -289,31 +326,37 @@ class SettingsDialog(BaseDialog):
         self.video_type_combo.setCurrentIndex(index)
         old_resolution = self.resolution_combo.currentText()
         self.resolution_combo.clear()
-        self.resolution_combo.addItems(self.available_videos[self.video_type_combo.currentText()])
+        self.resolution_combo.addItems(
+            self.available_videos[self.video_type_combo.currentText()]
+        )
         if old_resolution in self.available_videos[self.video_type_combo.currentText()]:
             self.resolution_combo.setCurrentText(old_resolution)
         else:
             self.resolution_combo.setCurrentIndex(0)
 
     def update_video_type_combo(self) -> None:
-        if self.resolution_combo.currentText() not in self.available_videos[self.video_type_combo.currentText()]:
+        if (
+            self.resolution_combo.currentText()
+            not in self.available_videos[self.video_type_combo.currentText()]
+        ):
             self.video_type_combo.setCurrentText("")
 
     def select_download_path(self) -> None:
         self.download_path = QFileDialog.getExistingDirectory(
-            self,
-            "Select download path",
-            os.path.expanduser("~")
+            self, "Select download path", os.path.expanduser("~")
         )
         if self.download_path:
-            self.download_path_edit.setText(f"..{os.path.sep}{self.download_path.split(os.path.sep)[-1]}")
+            self.download_path_edit.setText(
+                f"..{os.path.sep}{self.download_path.split(os.path.sep)[-1]}"
+            )
 
     def get_settings(self) -> dict:
         return {
             "download_path": self.download_path,
             "video_type": self.video_type_combo.currentText(),
-            "resolution": self.resolution_combo.currentText()
+            "resolution": self.resolution_combo.currentText(),
         }
+
 
 class DownloaderWorker(QWidget):
     """DownloaderWorker class is used to create different instances of the youtube downloader widget.
@@ -404,7 +447,9 @@ class DownloaderWorker(QWidget):
         self.progress_layout.addWidget(self.progress_bar)
 
     def download_video(self) -> None:
-        if self.add_url_entry.text() and self.add_url_entry.text().startswith("https://www.youtube.com/watch?v="):
+        if self.add_url_entry.text() and self.add_url_entry.text().startswith(
+            "https://www.youtube.com/watch?v="
+        ):
             self.video_url = self.add_url_entry.text()
         if self.video_url:
             download_youtube_video(
@@ -413,7 +458,7 @@ class DownloaderWorker(QWidget):
                 video_type=self.video_type,
                 resolution=self.video_resolution,
                 progress=self.download_progress_signal,
-                filesize=self.video_size_signal
+                filesize=self.video_size_signal,
             )
         else:
             self._show_warning("Please enter a valid URL")
@@ -433,22 +478,32 @@ class DownloaderWorker(QWidget):
         self.parent.layout.removeWidget(self)
         self.deleteLater()
 
-        length = len([worker for worker in self.parent.workers.values() if worker is not None])
+        length = len(
+            [worker for worker in self.parent.workers.values() if worker is not None]
+        )
         self.parent.setFixedHeight(int(self.height() * length * 1.05))
 
         self.parent.workers[self.ind] = None
-        length = len([worker for worker in self.parent.workers.values() if worker is not None])
-        if len([worker for worker in self.parent.workers.values() if worker is not None]) == 0:
+        length = len(
+            [worker for worker in self.parent.workers.values() if worker is not None]
+        )
+        if (
+            len(
+                [
+                    worker
+                    for worker in self.parent.workers.values()
+                    if worker is not None
+                ]
+            )
+            == 0
+        ):
             self.parent.toggle_edit_mode(False)
             self.parent.setFixedWidth(0)
             self.parent.setFixedHeight(0)
             self.parent.adjustSize()
 
     def _show_warning(self, msg: str) -> None:
-        warning = BaseDialog(
-            msg,
-            parent=self
-        )
+        warning = BaseDialog(msg, parent=self)
         # remove reject button frm the dialog
         for widget in warning.findChildren(RedButton):
             widget.setHidden(True)
@@ -472,7 +527,8 @@ class DownloaderWorker(QWidget):
             self.video_location = settings["download_path"]
             print(self.video_location)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = YoutubeDownloader()
     window.show()
